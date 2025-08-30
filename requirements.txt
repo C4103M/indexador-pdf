@@ -1,0 +1,7 @@
+customtkinter==5.2.2
+darkdetect==0.8.0
+Flat==0.4
+packaging==25.0
+pillow==11.3.0
+PyMuPDF==1.26.4
+Unidecode==1.4.0
