@@ -1,13 +1,20 @@
-from flet import View, Row, Column, Text, Container, TextField, ButtonStyle, RoundedRectangleBorder, alignment, padding
-from flet import FilePicker, FilePickerResultEvent, SnackBar
+from flet import *
+import os
+import shutil
+from components.buttons import btn_padrao
+from services.database import get_options_turma
+from services.arquivos import salvar_arquivo_temp
 
 def cadastro_view(page):
-    def on_file_selected(e: FilePickerResultEvent):
-        msg = f"Arquivo escolhido: {e.files[0].name}" if e.files else "Nenhum arquivo selecionado."
-        page.snack_bar = SnackBar(Text(msg), open=True)
-        page.update()
+    page.snack_bar = SnackBar(Text(""))
 
+    def on_file_selected(e: FilePickerResultEvent):
+        caminho = salvar_arquivo_temp(e, page)
+
+    # cria o file_picker
     file_picker = FilePicker(on_result=on_file_selected)
+
+    # adiciona ao overlay da página
     page.overlay.append(file_picker)
 
     pdf_preview = Container(
@@ -18,16 +25,43 @@ def cadastro_view(page):
         width=250,
         height=250 * 1.414,
     )
+    upload_btn = btn_padrao("Upload",lambda _: file_picker.pick_files())
+    col_esquerda = Column(controls=[pdf_preview, upload_btn], alignment="center")
+    
+    # Elementos coluna direita
+    turmas = get_options_turma()
+    lista_opcoes = [dropdown.Option(turma.nome) for turma in turmas]
+    drop_down = Dropdown(
+        label="Escolha uma turma (opcional)",
+        options=lista_opcoes,
+        width=300
+    )
+    btn_salvar = btn_padrao("Salvar", None)
 
-    col_esquerda = Column(controls=[pdf_preview], alignment="center")
-
+    text_fields = Container(
+        content=Column(
+            controls=[
+                Text("Título:", weight="bold", size=20),
+                TextField(label="Título do Documento", expand=True),
+                Text("Tags:", weight="bold",size=20),
+                TextField(label="Tags (separe por vírgula)", expand=True),
+                Text("Turma:", weight="bold",size=20),
+                Row(controls=[drop_down, btn_salvar])
+            ]
+        ),
+        height=300,
+        padding=padding.only(left=20),
+        
+    )
+    titulo_col_direita = Text("Cadastrar PDF", size=40, weight="bold")
     col_direita = Column(
         controls=[
-            TextField(label="Título do Documento", expand=True),
-            TextField(label="Tags (separe por vírgula)", expand=True),
+            titulo_col_direita,
+            text_fields
         ],
         spacing=20,
         expand=True,
+        alignment="center"
     )
 
     return View(
@@ -35,3 +69,5 @@ def cadastro_view(page):
         controls=[Row(controls=[col_esquerda, col_direita], expand=True, spacing=40)],
         padding=padding.all(40),
     )
+
+

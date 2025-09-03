@@ -13,6 +13,11 @@ pdf_tag = Table(
     Column("pdf_id", Integer, ForeignKey("pdfs.id")),
     Column("tag_id", Integer, ForeignKey("tags.id"))
 )
+pdf_turma = Table(
+    "pdf_turma", Base.metadata,
+    Column("pdf_id", Integer, ForeignKey("pdfs.id"), primary_key=True),
+    Column("turma_id", Integer, ForeignKey("turmas.id"), primary_key=True)
+)
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -21,26 +26,47 @@ class Tag(Base):
     
     def __init__(self, valor):
         self.valor = valor
-        
+
+class Turma(Base):
+    __tablename__ = "turmas"
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    nome = Column("nome", String)
+    def __init__(self, nome):
+        self.nome = nome
+
         
 class Pdf(Base):
     __tablename__ = "pdfs"
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     caminho = Column("caminho", String)
     titulo = Column("titulo", String)
-    tags = relationship("Tag", secondary=pdf_tag, backref="pdfs")
     
-    def __init__(self, caminho, titulo, tags):
+    # Relações N:N
+    tags = relationship("Tag", secondary=pdf_tag, backref="pdfs")
+    turmas = relationship("Turma", secondary=pdf_turma, backref="pdfs")
+    
+    def __init__(self, caminho, titulo, tags=None, turmas=None):
         self.caminho = caminho
         self.titulo = titulo
+        
+        # Turmas
         self.tags = []
-        for valor in tags:
-            # procura tag já existente
-            tag = session.query(Tag).filter_by(valor=valor).first()
-            if not tag:  
-                tag = Tag(valor=valor)  # cria nova se não existir
-            self.tags.append(tag)  # associa
-            
+        if tags:
+            for valor in tags:
+                # procura tag já existente
+                tag = session.query(Tag).filter_by(valor=valor).first()
+                if not tag:  
+                    tag = Tag(valor=valor)  # cria nova se não existir
+                self.tags.append(tag)  # associa
+                
+        # Turmas
+        self.turmas = []
+        if turmas:
+            for nome in turmas:
+                turma = session.query(Turma).filter_by(nome=nome).first()
+                if not turma:
+                    turma = Turma(nome=nome)
+                self.turmas.append(turma)
         
 
 Base.metadata.create_all(bind=db)

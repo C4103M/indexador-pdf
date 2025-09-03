@@ -1,5 +1,10 @@
 import conection
-import tela
-pdf = conection.Pdf(caminho="./pdfs/pdf1.pdf", titulo="titulo1", tags=["tag1", "tag2", "tag3"])
+# import tela
+pdf = conection.Pdf(
+    caminho="caminho/arquivo.pdf",
+    titulo="Aula 01",
+    tags=["importante", "exercícios"],
+    turmas=["3A", "3B"]
+)
 conection.session.add(pdf)
 conection.session.commit()

@@ -1,8 +1,9 @@
 from flet import ElevatedButton, ButtonStyle, RoundedRectangleBorder
 
-def upload_button(on_click):
+def btn_padrao(titulo_btn ,on_click):
+    titulo_btn = str(titulo_btn)
     return ElevatedButton(
-        "Upload",
+        titulo_btn,
         on_click=on_click,
         width=100,
         height=40,

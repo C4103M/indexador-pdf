@@ -1,13 +1,13 @@
 from flet import View, Row, Text, Container, margin, Column, TextField, MainAxisAlignment
 from components.sidebar import sidebar
-from components.buttons import upload_button
+from components.buttons import btn_padrao
 
 def home_view(page):
     titulo = Text("Indexador de PDF", weight="bold", size=32)
 
     linha_titulo = Container(
         Row(
-            controls=[titulo, upload_button(lambda _: page.go("/cadastro"))],
+            controls=[titulo, btn_padrao("Upload",lambda _: page.go("/cadastro"))],
             alignment=MainAxisAlignment.SPACE_BETWEEN,
         ),
         margin=margin.only(top=20),
