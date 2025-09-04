@@ -67,6 +67,8 @@ class Pdf(Base):
                 if not turma:
                     turma = Turma(nome=nome)
                 self.turmas.append(turma)
+                
+    
         
 
 Base.metadata.create_all(bind=db)

@@ -1,99 +1,174 @@
+# Arquivo: views/cadastro_view.py
+
 from flet import *
-from components.buttons import btn_padrao
+
+# Importe a sua nova classe Arquivo
+from services.arquivos import Arquivo
 from services.database import get_options_turma
-from services.arquivos import salvar_arquivo_temp, get_data_pdf, salvar_arquivo
+from components.buttons import btn_padrao
 from components.pdf_preview import gerar_preview
-def cadastro_view(page):
-    page.snack_bar = SnackBar(Text(""))
-    arquivo_selecionado = None
-    caminho = None
-    def on_file_selected(e: FilePickerResultEvent):
-        nonlocal arquivo_selecionado
-        arquivo_selecionado = e
-        caminho = salvar_arquivo_temp(e, page)
-        res = get_data_pdf(caminho)
-        # print(res)
-        put_textfield(res)
 
-    def on_save_button():
-        if (arquivo_selecionado != None):
-            salvar_arquivo(arquivo_selecionado, page)
-        
-    
-    # cria o file_picker
-    file_picker = FilePicker(on_result=on_file_selected)
 
-    # adiciona ao overlay da página
-    page.overlay.append(file_picker)
+class CadastroView:
+    def __init__(self, page: Page):
+        self.page = page
+        self.arquivo_atual = None  # Substitui a variável 'nonlocal'
 
-    pdf_preview = Container(
-        content=Text("Preview do PDF selecionado", size=16, weight="bold"),
-        alignment=alignment.center,
-        bgcolor="#f4f4f5",
-        border_radius=10,
-        width=250,
-        height=250 * 1.414,
-    )
-    upload_btn = btn_padrao("Upload",lambda _: file_picker.pick_files())
-    col_esquerda = Column(controls=[pdf_preview, upload_btn], alignment="center")
-    
-    # Elementos coluna direita
-    turmas = get_options_turma()
-    lista_opcoes = [dropdown.Option(turma.nome) for turma in turmas]
-    drop_down = Dropdown(
-        label="Escolha uma turma (opcional)",
-        options=lista_opcoes,
-        width=300
-    )
-    btn_salvar = btn_padrao("Salvar", lambda _: on_save_button())
-    btn_cancelar = btn_padrao("Cancelar", None)
-    btn_cancelar.bgcolor = "#f3f3f3"
-    btn_cancelar.color = "#000000"
-    tf_titulo = TextField(label="Título do Documento", expand=True)
-    tf_tags = TextField(label="Tags (separe por vírgula)", expand=True)
-    text_fields = Container(
-        content=Column(
+        # --- Componentes da UI (definidos como atributos da classe) ---
+        self.file_picker = FilePicker(on_result=self._on_file_selected)
+        self.page.overlay.append(self.file_picker)
+
+        self.tf_titulo = TextField(label="Título do Documento", expand=True)
+        self.tf_tags = TextField(label="Tags (separe por vírgula)", expand=True)
+
+        lista_opcoes = [dropdown.Option(t.nome) for t in get_options_turma()]
+        self.drop_down_turmas = Dropdown(
+            label="Escolha uma turma (opcional)", options=lista_opcoes, width=300
+        )
+
+        self.pdf_preview = Container(
+            content=Text("Selecione um PDF para visualizar", size=16),
+            alignment=alignment.center,
+            bgcolor="#f4f4f5",
+            border_radius=10,
+            width=250,
+            height=250 * 1.414,
+        )
+
+    # --- Métodos de Construção da UI ---
+
+    def _build_coluna_esquerda(self) -> Column:
+        """Constrói a coluna da esquerda com o preview e o botão de upload."""
+        return Column(
             controls=[
-                Text("Título:", weight="bold", size=20),
-                tf_titulo,
-                Text("Tags:", weight="bold",size=20),
-                tf_tags,
-                Text("Turma:", weight="bold",size=20),
-                Row(controls=[drop_down, btn_cancelar, btn_salvar])
-            ]
-        ),
-        height=300,
-        padding=padding.only(left=20),
-        
-    )
-    titulo_col_direita = Text("Cadastrar PDF", size=40, weight="bold")
-    col_direita = Column(
-        controls=[
-            titulo_col_direita,
-            text_fields
-        ],
-        spacing=20,
-        expand=True,
-        alignment="center"
-    )
-    def put_textfield(conteudo):
-        try:
-            tf_titulo.value = conteudo["titulo"]
-            tags = conteudo["tags"]
-            # garantir que todos são strings
-            tags_string = ", ".join(str(t) for t in tags)
-            tf_tags.value = tags_string
-            col_esquerda.controls.clear()
-            col_esquerda.controls.append(gerar_preview(conteudo["caminho"]))
-            page.update()
-        except Exception as e:
-            print("Erro em put_textfield:", e)
+                self.pdf_preview,
+                btn_padrao("Upload", lambda _: self.file_picker.pick_files()),
+            ],
+            alignment="center",
+        )
 
-        
-    return View(
-        route="/cadastro",
-        controls=[Row(controls=[col_esquerda, col_direita], expand=True, spacing=40)],
-        padding=padding.all(40),
-    )
+    def _build_coluna_direita(self) -> Column:
+        """Constrói a coluna da direita com os campos de texto e botões de ação."""
+        btn_salvar = btn_padrao("Salvar", self._on_save_button)
+        btn_cancelar = btn_padrao("Cancelar", self._on_cancel_button)
+        btn_cancelar.bgcolor = "#f3f3f3"
+        btn_cancelar.color = "#000000"
 
+        return Column(
+            controls=[
+                Text("Cadastrar PDF", size=40, weight="bold"),
+                Container(
+                    Column(
+                        controls=[
+                            Text("Título:", weight="bold", size=20),
+                            self.tf_titulo,
+                            Text("Tags:", weight="bold", size=20),
+                            self.tf_tags,
+                            Text("Turma:", weight="bold", size=20),
+                            Row(
+                                controls=[
+                                    self.drop_down_turmas,
+                                    btn_cancelar,
+                                    btn_salvar,
+                                ],
+                                spacing=10,
+                            ),
+                        ]
+                    ),
+                    height=300,
+                    padding=padding.only(left=20),
+                ),
+            ],
+            spacing=20,
+            expand=True,
+            alignment="center"
+        )
 
+    # --- Métodos de Evento (Handlers) ---
+
+    def _on_file_selected(self, e: FilePickerResultEvent):
+        """Chamado quando um arquivo é selecionado no FilePicker."""
+        caminho_temp = Arquivo.copiar_para_temp(e, self.page)
+        if not caminho_temp:
+            return  # Usuário cancelou a seleção
+
+        # Usa a classe Arquivo para criar o objeto e extrair os dados
+        self.arquivo_atual = Arquivo.from_pdf(caminho_temp)
+
+        # Atualiza os campos da UI com os dados extraídos
+        self._atualizar_campos_e_preview()
+
+    def _on_save_button(self, e):
+        """Salva o arquivo permanentemente e limpa a tela."""
+        if self.arquivo_atual:
+            try:
+                # Pega os valores dos campos, caso o usuário tenha editado
+                self.arquivo_atual.titulo = self.tf_titulo.value
+                self.arquivo_atual.tags = [
+                    tag.strip() for tag in self.tf_tags.value.split(",")
+                ]
+
+                # Salva o arquivo e atualiza o caminho
+                self.arquivo_atual.salvar_definitivo()
+
+                # TODO: Aqui você adicionaria a lógica para salvar no banco de dados
+                # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_turmas.value)
+
+                self.page.snack_bar = SnackBar(
+                    Text(f"Arquivo '{self.arquivo_atual.titulo}' salvo com sucesso!"),
+                    open=True,
+                )
+                self._limpar_tela()  # Limpa os campos para um novo cadastro
+            except Exception as ex:
+                self.page.snack_bar = SnackBar(Text(f"Erro ao salvar: {ex}"), open=True)
+
+            self.page.update()
+
+    def _on_cancel_button(self, e):
+        # TODO: Implementar lógica de cancelamento (ex: limpar tela, voltar pra home)
+        print("Operação cancelada.")
+        self._limpar_tela()
+
+    # --- Métodos Auxiliares ---
+
+    def _atualizar_campos_e_preview(self):
+        """Atualiza os TextFields e o preview com os dados do arquivo."""
+        if not self.arquivo_atual:
+            return
+
+        self.tf_titulo.value = self.arquivo_atual.titulo
+        self.tf_tags.value = ", ".join(self.arquivo_atual.tags)
+
+        # Atualiza o preview
+        self.pdf_preview.content = gerar_preview(self.arquivo_atual.path)
+        self.page.update()
+
+    def _limpar_tela(self):
+        """Reseta a tela para o estado inicial."""
+        self.arquivo_atual = None
+        self.tf_titulo.value = ""
+        self.tf_tags.value = ""
+        self.drop_down_turmas.value = None
+        self.pdf_preview.content = Text("Selecione um PDF para visualizar", size=16)
+        self.page.update()
+
+    def build(self) -> View:
+        """Constrói e retorna o objeto View final para o Flet."""
+        return View(
+            route="/cadastro",
+            controls=[
+                Row(
+                    controls=[
+                        self._build_coluna_esquerda(),
+                        self._build_coluna_direita(),
+                    ],
+                    expand=True,
+                    spacing=40,
+                    vertical_alignment=CrossAxisAlignment.CENTER,
+                )
+            ],
+            padding=padding.all(40),
+        )
+
+def cadastro_view(page: Page) -> View:
+    return CadastroView(page).build()
