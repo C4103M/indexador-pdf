@@ -1,11 +1,6 @@
 from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Table
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 
-db = create_engine("sqlite:///pdfs.db")
-#Abrir sessão
-Session = sessionmaker(bind=db)
-session = Session()
-
 Base = declarative_base()
 
 pdf_tag = Table(
@@ -31,6 +26,7 @@ class Turma(Base):
     __tablename__ = "turmas"
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     nome = Column("nome", String)
+    
     def __init__(self, nome):
         self.nome = nome
 
@@ -49,26 +45,24 @@ class Pdf(Base):
         self.caminho = caminho
         self.titulo = titulo
         
-        # Turmas
-        self.tags = []
-        if tags:
-            for valor in tags:
-                # procura tag já existente
-                tag = session.query(Tag).filter_by(valor=valor).first()
-                if not tag:  
-                    tag = Tag(valor=valor)  # cria nova se não existir
-                self.tags.append(tag)  # associa
+        # # Turmas
+        # self.tags = []
+        # if tags:
+        #     for valor in tags:
+        #         # procura tag já existente
+        #         tag = session.query(Tag).filter_by(valor=valor).first()
+        #         if not tag:  
+        #             tag = Tag(valor=valor)  # cria nova se não existir
+        #         self.tags.append(tag)  # associa
                 
-        # Turmas
-        self.turmas = []
-        if turmas:
-            for nome in turmas:
-                turma = session.query(Turma).filter_by(nome=nome).first()
-                if not turma:
-                    turma = Turma(nome=nome)
-                self.turmas.append(turma)
+        # # Turmas
+        # self.turmas = []
+        # if turmas:
+        #     for nome in turmas:
+        #         turma = session.query(Turma).filter_by(nome=nome).first()
+        #         if not turma:
+        #             turma = Turma(nome=nome)
+        #         self.turmas.append(turma)
                 
     
         
-
-Base.metadata.create_all(bind=db)

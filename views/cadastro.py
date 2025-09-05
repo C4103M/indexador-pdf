@@ -4,13 +4,13 @@ from flet import *
 
 # Importe a sua nova classe Arquivo
 from services.arquivos import Arquivo
-from services.database import get_options_turma
+from services.repository import TurmaRepository, PdfRepository
 from components.buttons import btn_padrao
 from components.pdf_preview import gerar_preview
-
+from sqlalchemy.orm import Session
 
 class CadastroView:
-    def __init__(self, page: Page):
+    def __init__(self, page: Page, session: Session):
         self.page = page
         self.arquivo_atual = None  # Substitui a variável 'nonlocal'
 
@@ -20,8 +20,12 @@ class CadastroView:
 
         self.tf_titulo = TextField(label="Título do Documento", expand=True)
         self.tf_tags = TextField(label="Tags (separe por vírgula)", expand=True)
-
-        lista_opcoes = [dropdown.Option(t.nome) for t in get_options_turma()]
+        
+        self.session = session
+        self.turma_repo = TurmaRepository(self.session)
+        self.pdf_repo = PdfRepository(self.session)
+        
+        lista_opcoes = [dropdown.Option(t.nome) for t in self.turma_repo.find_all()]
         self.drop_down_turmas = Dropdown(
             label="Escolha uma turma (opcional)", options=lista_opcoes, width=300
         )
@@ -110,7 +114,7 @@ class CadastroView:
 
                 # Salva o arquivo e atualiza o caminho
                 self.arquivo_atual.salvar_definitivo()
-
+                
                 # TODO: Aqui você adicionaria a lógica para salvar no banco de dados
                 # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_turmas.value)
 
@@ -170,5 +174,5 @@ class CadastroView:
             padding=padding.all(40),
         )
 
-def cadastro_view(page: Page) -> View:
-    return CadastroView(page).build()
+def cadastro_view(page: Page, session: Session) -> View:
+    return CadastroView(page, session).build()

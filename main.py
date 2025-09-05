@@ -1,14 +1,33 @@
-import flet as ft
-from components.pdf_preview import gerar_preview  # sua função que retorna um Image
+from flet import *
+from views.home import home_view
+from views.cadastro import cadastro_view
 
-def main(page: ft.Page):
-    # gerar preview de um PDF
-    preview = gerar_preview("pdfs/temp\\Conferência -_Metropole (2023).pdf")
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from services.repository import PdfRepository
+from services.models import Base
 
-    # colocar dentro de um Column
-    col = ft.Column(controls=[preview])
+engine = create_engine("sqlite:///pdfs.db")
+Base.metadata.create_all(bind=engine) # Cria as tabelas se não existirem
+# Cria uma nova sessão para consultas
+Session = sessionmaker(bind=engine)
+session = Session()
+# Inicializar o repositório (classe) pdf, para consultas e inserções
+pdf_repo = PdfRepository(session)
 
-    # adicionar à página
-    page.add(col)
 
-ft.app(target=main)
+def main(page: Page):
+    page.theme_mode = ThemeMode.LIGHT
+
+    def route_change(e):
+        page.views.clear()
+        if page.route == "/":
+            page.views.append(home_view(page))
+        elif page.route == "/cadastro":
+            page.views.append(cadastro_view(page, session))
+        page.update()
+
+    page.on_route_change = route_change
+    page.go("/")
+
+app(target=main)

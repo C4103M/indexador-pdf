@@ -58,22 +58,27 @@ class Arquivo:
 
     def salvar_definitivo(self, destino_dir="pdfs"):
         """
-        Move o arquivo da sua localização atual (temporária) para a pasta
-        de destino final e atualiza o caminho (path) do objeto.
+        Move o arquivo para o destino final, garantindo que o nome seja
+        sempre um identificador único (UUID).
         """
         if not os.path.exists(self.path):
-            # Lançar um erro ou tratar caso o arquivo de origem não exista
             raise FileNotFoundError(f"O arquivo de origem não foi encontrado em: {self.path}")
 
-        nome_arquivo = os.path.basename(self.path)
-        destino_final = os.path.join(destino_dir, nome_arquivo)
+        # 1. Pega a extensão do arquivo que está no caminho temporário
+        _, extensao = os.path.splitext(self.path)
+        
+        # 2. Gera um novo nome de arquivo único e aleatório
+        nome_final_unico = f"{str(uuid.uuid4())}{extensao}"
+
+        # 3. Monta o caminho de destino final e move o arquivo
+        destino_final = os.path.join(destino_dir, nome_final_unico)
         
         os.makedirs(destino_dir, exist_ok=True)
         shutil.move(self.path, destino_final)
         
-        # Atualiza o path do objeto para a nova localização
+        # 4. ATUALIZA o caminho no objeto para refletir o novo nome e local
         self.path = destino_final
-        print(f"Arquivo movido para: {self.path}")
+        print(f"Arquivo salvo com nome único em: {self.path}")
 
     @staticmethod
     def copiar_para_temp(e: FilePickerResultEvent, page):
