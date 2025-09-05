@@ -22,7 +22,7 @@ def main(page: Page):
     def route_change(e):
         page.views.clear()
         if page.route == "/":
-            page.views.append(home_view(page))
+            page.views.append(home_view(page, session))
         elif page.route == "/cadastro":
             page.views.append(cadastro_view(page, session))
         page.update()

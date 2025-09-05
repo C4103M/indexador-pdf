@@ -1,26 +1,46 @@
-from flet import View, Row, Text, Container, margin, Column, TextField, MainAxisAlignment
+from flet import (
+    View,
+    Row,
+    Text,
+    Container,
+    margin,
+    Column,
+    TextField,
+    MainAxisAlignment,
+    Page,
+)
 from components.sidebar import sidebar
 from components.buttons import btn_padrao
+from sqlalchemy.orm import Session
+from services.repository import TurmaRepository, PdfRepository
 
-def home_view(page):
-    titulo = Text("Indexador de PDF", weight="bold", size=32)
 
-    linha_titulo = Container(
-        Row(
-            controls=[titulo, btn_padrao("Upload",lambda _: page.go("/cadastro"))],
-            alignment=MainAxisAlignment.SPACE_BETWEEN,
-        ),
-        margin=margin.only(top=20),
-    )
+class HomeView:
+    def __init__(self, page: Page, session: Session):
+        self.page = page
+        self.session = session
+        self.turma_repo = TurmaRepository(self.session)
+        self.pdf_repo = PdfRepository(self.session)
 
-    barra_pesquisa = TextField(label="Pesquisar PDF", expand=True)
+        self.linha_titulo = Container(
+            Row(
+                controls=[Text("Indexador de PDF", weight="bold", size=32), btn_padrao("Upload", lambda _: page.go("/cadastro"))],
+                alignment=MainAxisAlignment.SPACE_BETWEEN,
+            ),
+            margin=margin.only(top=20),
+        )
+        self.barra_pesquisa = TextField(label="Pesquisar PDF", expand=True)
 
-    linha_pesquisa = Container(Row(controls=[barra_pesquisa]))
+        self.linha_pesquisa = Container(Row(controls=[self.barra_pesquisa]))
 
-    col_pdfs = Column(controls=[linha_titulo, linha_pesquisa], expand=True)
+        self.col_pdfs = Column(controls=[self.linha_titulo, self.linha_pesquisa], expand=True)
 
-    return View(
+    def build(self):
+        return View(
         route="/",
-        controls=[Row(controls=[sidebar(), col_pdfs], expand=True)],
+        controls=[Row(controls=[sidebar(), self.col_pdfs], expand=True)],
         padding=20,
     )
+
+def home_view(page: Page, session: Session):
+    return HomeView(page, session).build()
