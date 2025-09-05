@@ -25,6 +25,8 @@ def main(page: Page):
             page.views.append(home_view(page, session))
         elif page.route == "/cadastro":
             page.views.append(cadastro_view(page, session))
+        elif page.route == "/config":
+            page.views.append(cadastro_view(page, session))
         page.update()
 
     page.on_route_change = route_change

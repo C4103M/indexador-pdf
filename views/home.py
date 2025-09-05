@@ -38,7 +38,7 @@ class HomeView:
     def build(self):
         return View(
         route="/",
-        controls=[Row(controls=[sidebar(), self.col_pdfs], expand=True)],
+        controls=[Row(controls=[sidebar(self.page), self.col_pdfs], expand=True)],
         padding=20,
     )
 
