@@ -18,7 +18,8 @@ pdf_repo = PdfRepository(session)
 
 def main(page: Page):
     page.theme_mode = ThemeMode.LIGHT
-
+    ss = Session()
+    print(PdfRepository(ss).find_all())
     def route_change(e):
         page.views.clear()
         if page.route == "/":

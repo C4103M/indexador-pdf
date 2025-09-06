@@ -45,6 +45,17 @@ class Pdf(Base):
         self.caminho = caminho
         self.titulo = titulo
         
+    def to_dict(self) -> dict:
+        """Converte o objeto Pdf em um dicionário."""
+        return {
+            "id": self.id,
+            "titulo": self.titulo,
+            "caminho": self.caminho,
+            # Converte a lista de objetos Tag em uma lista de strings (nomes das tags)
+            "tags": [tag.valor for tag in self.tags],
+            # Converte a lista de objetos Turma em uma lista de strings (nomes das turmas)
+            "turmas": [turma.nome for turma in self.turmas]
+        }
         # # Turmas
         # self.tags = []
         # if tags:

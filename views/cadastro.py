@@ -8,8 +8,10 @@ from services.repository import TurmaRepository, PdfRepository
 from components.buttons import btn_padrao
 from components.pdf_preview import gerar_preview
 from sqlalchemy.orm import Session
-
-
+from components.progress import LoadingOverlay
+from pathlib import Path
+import time
+import threading
 class CadastroView:
     def __init__(self, page: Page, session: Session):
         self.page = page
@@ -18,10 +20,16 @@ class CadastroView:
         # --- Componentes da UI (definidos como atributos da classe) ---
         self.file_picker = FilePicker(on_result=self._on_file_selected)
         self.page.overlay.append(self.file_picker)
-
+        
+        self.directory_picker = FilePicker(on_result=self._on_directory_selected)
+        self.page.overlay.append(self.directory_picker)
+        
         self.tf_titulo = TextField(label="Título do Documento", expand=True)
         self.tf_tags = TextField(label="Tags (separe por vírgula)", expand=True)
 
+        self.loading_overlay = LoadingOverlay(page)
+        self.page.overlay.append(self.loading_overlay.build())
+        
         self.session = session
         self.turma_repo = TurmaRepository(self.session)
         self.pdf_repo = PdfRepository(self.session)
@@ -50,7 +58,7 @@ class CadastroView:
                 Row(
                     controls=[
                         btn_padrao("Upload", lambda _: self.file_picker.pick_files()),
-                        btn_padrao("Salvar Em lote", lambda _: self.file_picker.get_directory_path()),
+                        btn_padrao("Salvar Em lote", lambda _: self.directory_picker.get_directory_path()),
                     ]
                 )
             ],
@@ -97,16 +105,17 @@ class CadastroView:
     # --- Métodos de Evento (Handlers) ---
 
     def _on_file_selected(self, e: FilePickerResultEvent):
-        """Chamado quando um arquivo é selecionado no FilePicker."""
+        """Chamado quando um arquivo é selecionado no FilePicker.""" 
         caminho_temp = Arquivo.copiar_para_temp(e, self.page)
         if not caminho_temp:
             return  # Usuário cancelou a seleção
-
+        
         # Usa a classe Arquivo para criar o objeto e extrair os dados
         self.arquivo_atual = Arquivo.from_pdf(caminho_temp)
-
+        
         # Atualiza os campos da UI com os dados extraídos
         self._atualizar_campos_e_preview()
+        
 
     def _on_save_button(self, e):
         """Salva o arquivo permanentemente e limpa a tela."""
@@ -123,7 +132,7 @@ class CadastroView:
 
                 # Salva o arquivo e atualiza o caminho
                 self.arquivo_atual.salvar_definitivo()
-                # # --- ADICIONE ESTE BLOCO DE VERIFICAÇÃO ---
+                # # --- BLOCO DE VERIFICAÇÃO ---
                 # print("-" * 30)
                 # print("[VIEW] Preparando para criar no banco:")
                 # print(f"  > Título: {self.arquivo_atual.titulo}")
@@ -158,10 +167,81 @@ class CadastroView:
         print("Operação cancelada.")
         self._limpar_tela()
         
-    def _salvar_em_lotes():
-        pass
+    def _on_directory_selected(self, e: FilePickerResultEvent):
+        """
+        Gerenciador de resultado: chamado quando o usuário escolhe uma pasta.
+        Ele apenas inicia a thread de trabalho.
+        """
+        if not e.path:
+            # Usuário cancelou
+            return
         
-
+        # Mostra o overlay e inicia a thread "trabalhadora"
+        self.loading_overlay.show()
+        
+        thread = threading.Thread(
+            target=self._worker_salvar_em_lotes, 
+            args=[e.path], 
+            daemon=True
+        )
+        thread.start()
+    
+    def _worker_salvar_em_lotes(self, caminho_da_pasta: str):
+        """Esta função roda em uma thread separada. Ela conta os PDFs, processa um a um e atualiza a barra de progresso."""
+        try:
+            # Listar arquivos
+            print(f"Buscando arquivos pdf em: {caminho_da_pasta}")
+            pasta = Path(caminho_da_pasta)
+            lista_de_pdfs = list(pasta.glob("*.pdf"))
+            total_de_pdfs = len(lista_de_pdfs)
+            
+            if total_de_pdfs == 0:
+                self.page.run_threadsafe(self.page.open, SnackBar(Text("Nenhum arquivo .pdf encontrado na pasta.")))
+                return
+            sucessos = 0
+            falhas = 0
+            
+            # O i recebe o índice do objeto, e o caminho_pdf_obj recebe o pdf
+            for i, caminho_pdf_obj in enumerate(lista_de_pdfs):
+                # Atualiza a barra de progresso
+                percentual = (i + 1)/total_de_pdfs
+                nome_arquivo = caminho_pdf_obj.name
+                msg_progresso = f"Processando {i+1}/{total_de_pdfs}: {nome_arquivo}"
+                self.page.run_thread(self.loading_overlay.set_progress, percentual)
+                # Extrai os dados do pdf
+                try:
+                    caminho_str = str(caminho_pdf_obj)
+                    
+                    # Extrai os dados do PDF
+                    arquivo_obj = Arquivo.from_pdf(caminho_str)
+                    
+                    arquivo_obj.salvar_definitivo()
+                    
+                    # Salva no banco de dados
+                    self.pdf_repo.create(
+                        titulo=arquivo_obj.titulo,
+                        caminho=arquivo_obj.path,
+                        tags_valores=arquivo_obj.tags,
+                    )
+                    sucessos += 1
+                    print(f"SUCESSO: {nome_arquivo}")
+                
+                except Exception as e:
+                    falhas += 1
+                    print(f"FALHA ao processar {nome_arquivo}: {e}")
+                    
+            msg_final = f"Concluído! {sucessos} salvos, {falhas} falhas."
+            self.page.run_thread(self.page.open, SnackBar(Text(msg_final)))
+            
+        finally:
+            # GARANTE QUE O OVERLAY SEJA ESCONDIDO
+            self.page.run_thread(self.loading_overlay.hide)
+            
+            
+            
+            
+            
+            
     # --- Métodos Auxiliares ---
 
     def _atualizar_campos_e_preview(self):

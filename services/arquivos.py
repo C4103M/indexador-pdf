@@ -1,7 +1,7 @@
 import os, re, shutil, time, uuid, yake
 from PyPDF2 import PdfReader
 from flet import FilePickerResultEvent, SnackBar, Text
-
+from pathlib import Path
 class Arquivo:
     def __init__(self, path: str, titulo: str, tags: list = None, turma: str = None):
         self.id = str(uuid.uuid4())
@@ -71,7 +71,17 @@ class Arquivo:
         destino_final = os.path.join(destino_dir, nome_final_unico)
         
         os.makedirs(destino_dir, exist_ok=True)
-        shutil.move(self.path, destino_final)
+        # shutil.move(self.path, destino_final)
+        
+        caminho_origem = Path(self.path)
+        pasta_temp = Path("pdfs/temp")
+        # parents é um método do pathlib pra verificar se um arquivo está dentro de uma pasta
+        if pasta_temp in caminho_origem.parents:
+            # CASO 1: O arquivo está na pasta temp (fluxo de upload único)
+            shutil.move(caminho_origem, destino_final)
+        else:
+            # CASO 2: O arquivo está em uma pasta no pc do cliente
+            shutil.copy(self.path, destino_final)
         
         # 4. ATUALIZA o caminho no objeto para refletir o novo nome e local
         self.path = destino_final

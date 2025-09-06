@@ -31,8 +31,6 @@ class PdfRepository:
         
         self.tag_repo = TagRepository(session)
         self.turma_repo = TurmaRepository(session)
-        
-        self.list
 
     def create(self, titulo: str, caminho: str, tags_valores: list[str], turma_nome: str = None) -> Pdf:
         """Cria um novo registro de PDF com suas tags e turma associadas."""
@@ -57,5 +55,11 @@ class PdfRepository:
         self.session.commit()
         return novo_pdf
     
-    def list(self) -> dict:
-        return self.session.query(Pdf).all()
+    
+        
+    def find_all(self):
+        # 1. Busca todos os objetos Pdf do banco de dados
+        pdfs_objetos = self.session.query(Pdf).all()
+        
+        # 2. Usa uma list comprehension para chamar .to_dict() em cada objeto
+        return [pdf.to_dict() for pdf in pdfs_objetos]
