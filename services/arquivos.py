@@ -1,17 +1,14 @@
-import os
-import re
-import shutil
-import uuid
-import yake
+import os, re, shutil, time, uuid, yake
 from PyPDF2 import PdfReader
 from flet import FilePickerResultEvent, SnackBar, Text
 
 class Arquivo:
-    def __init__(self, path: str, titulo: str, tags: list = None):
+    def __init__(self, path: str, titulo: str, tags: list = None, turma: str = None):
         self.id = str(uuid.uuid4())
         self.path = path
         self.titulo = titulo
         self.tags = tags if tags is not None else []
+        self.turma = turma
 
     @staticmethod
     def _limpar_texto(texto: str) -> str:
@@ -99,7 +96,6 @@ class Arquivo:
         shutil.copy(origem, path_temporario)
 
         # Feedback visual para o usuário
-        page.snack_bar = SnackBar(Text(f"Arquivo '{arquivo_selecionado.name}' carregado."), open=True)
-        page.update()
-        
+        snack_bar = SnackBar(Text(f"Arquivo '{arquivo_selecionado.name}' carregado."), open=True)
+        page.open(snack_bar)
         return path_temporario

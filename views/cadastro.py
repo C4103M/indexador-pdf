@@ -9,6 +9,7 @@ from components.buttons import btn_padrao
 from components.pdf_preview import gerar_preview
 from sqlalchemy.orm import Session
 
+
 class CadastroView:
     def __init__(self, page: Page, session: Session):
         self.page = page
@@ -20,11 +21,11 @@ class CadastroView:
 
         self.tf_titulo = TextField(label="Título do Documento", expand=True)
         self.tf_tags = TextField(label="Tags (separe por vírgula)", expand=True)
-        
+
         self.session = session
         self.turma_repo = TurmaRepository(self.session)
         self.pdf_repo = PdfRepository(self.session)
-        
+
         lista_opcoes = [dropdown.Option(t.nome) for t in self.turma_repo.find_all()]
         self.drop_down_turmas = Dropdown(
             label="Escolha uma turma (opcional)", options=lista_opcoes, width=300
@@ -46,7 +47,12 @@ class CadastroView:
         return Column(
             controls=[
                 self.pdf_preview,
-                btn_padrao("Upload", lambda _: self.file_picker.pick_files()),
+                Row(
+                    controls=[
+                        btn_padrao("Upload", lambda _: self.file_picker.pick_files()),
+                        btn_padrao("Salvar Em lote", lambda _: self.file_picker.get_directory_path()),
+                    ]
+                )
             ],
             alignment="center",
         )
@@ -85,7 +91,7 @@ class CadastroView:
             ],
             spacing=20,
             expand=True,
-            alignment="center"
+            alignment="center",
         )
 
     # --- Métodos de Evento (Handlers) ---
@@ -104,34 +110,57 @@ class CadastroView:
 
     def _on_save_button(self, e):
         """Salva o arquivo permanentemente e limpa a tela."""
+        # print("Está chegando aqui!")
         if self.arquivo_atual:
             try:
+                # print("Está chegando aqui!")
                 # Pega os valores dos campos, caso o usuário tenha editado
                 self.arquivo_atual.titulo = self.tf_titulo.value
                 self.arquivo_atual.tags = [
                     tag.strip() for tag in self.tf_tags.value.split(",")
                 ]
+                self.arquivo_atual.turma = self.drop_down_turmas.value
 
                 # Salva o arquivo e atualiza o caminho
                 self.arquivo_atual.salvar_definitivo()
-                
+                # # --- ADICIONE ESTE BLOCO DE VERIFICAÇÃO ---
+                # print("-" * 30)
+                # print("[VIEW] Preparando para criar no banco:")
+                # print(f"  > Título: {self.arquivo_atual.titulo}")
+                # print(f"  > Caminho: {self.arquivo_atual.path}")
+                # print(f"  > Tags: {self.arquivo_atual.tags}")
+                # print(f"  > Turma: {self.arquivo_atual.turma}")
+                # print("-" * 30)
+                # # --- FIM DO BLOCO ---
                 # TODO: Aqui você adicionaria a lógica para salvar no banco de dados
+                self.pdf_repo.create(
+                    titulo=self.arquivo_atual.titulo,
+                    caminho=self.arquivo_atual.path,
+                    tags_valores=self.arquivo_atual.tags,
+                    turma_nome=self.arquivo_atual.turma,
+                )
+
                 # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_turmas.value)
 
-                self.page.snack_bar = SnackBar(
+                snack_bar = SnackBar(
                     Text(f"Arquivo '{self.arquivo_atual.titulo}' salvo com sucesso!"),
                     open=True,
                 )
+                self.page.open(snack_bar)
                 self._limpar_tela()  # Limpa os campos para um novo cadastro
             except Exception as ex:
-                self.page.snack_bar = SnackBar(Text(f"Erro ao salvar: {ex}"), open=True)
-
+                snack_bar = SnackBar(Text(f"Erro ao salvar: {ex}"), open=True)
+                self.page.open(snack_bar)
             self.page.update()
 
     def _on_cancel_button(self, e):
         # TODO: Implementar lógica de cancelamento (ex: limpar tela, voltar pra home)
         print("Operação cancelada.")
         self._limpar_tela()
+        
+    def _salvar_em_lotes():
+        pass
+        
 
     # --- Métodos Auxiliares ---
 
@@ -173,6 +202,7 @@ class CadastroView:
             ],
             padding=padding.all(40),
         )
+
 
 def cadastro_view(page: Page, session: Session) -> View:
     return CadastroView(page, session).build()
