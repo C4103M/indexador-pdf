@@ -68,8 +68,8 @@ class SideBar:
     # Funções de redirecionamento
     def ir_para_cadastro(self, e):
         """Função que redireciona o usuário para a rota /cadastro."""
-        print("Redirecionando para /cadastro...")
-        self.page.go("/cadastro")
+        print("Redirecionando para /lista...")
+        self.page.go("/listar")
 
     def ir_para_home(self, e):
         """Função que redireciona o usuário para a rota inicial."""

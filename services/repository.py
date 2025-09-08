@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from services.models import Tag, Turma, Pdf
-
+from sqlalchemy import func
 class TagRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -55,11 +55,28 @@ class PdfRepository:
         self.session.commit()
         return novo_pdf
     
-    
+    def get_total_count(self) -> int:
+        """Retorna a contagem total de PDFs no banco."""
+        # usa a função COUNT do SQL para ser eficiente
+        return self.session.query(func.count(Pdf.id)).scalar()
         
-    def find_all(self):
-        # 1. Busca todos os objetos Pdf do banco de dados
+    def find_all(self, page: int = 1, per_page: int = 20) -> list[dict]:
+        """
+        Busca todos os PDFs de forma paginada.
+        :param page: O número da página a ser buscada (começando em 1).
+        :param per_page: A quantidade de itens por página.
+        """
+        # Calcula o 'offset' (quantos itens pular)
+        # Para a página 1, o offset é 0. Para a página 2, é 'per_page', e assim por diante.
+        offset = (page - 1) * per_page
         pdfs_objetos = self.session.query(Pdf).all()
+        
+        pdfs_objetos = self.session.query(Pdf).order_by(Pdf.titulo).offset(offset).limit(per_page).all()
         
         # 2. Usa uma list comprehension para chamar .to_dict() em cada objeto
         return [pdf.to_dict() for pdf in pdfs_objetos]
+
+    def find_one(self, caminho_pdf):
+        pdf = self.session.query(Pdf).filter_by(caminho = caminho_pdf).first()
+        pdf = pdf.to_dict()
+        return pdf
