@@ -1,4 +1,4 @@
-from flet import *
+from flet import Page, Row, Text, IconButton, Icons, Column, MainAxisAlignment, ScrollMode
 from sqlalchemy.orm import Session
 from services.repository import PdfRepository
 from components.pdf_card import PdfCard
@@ -15,7 +15,7 @@ class PdfListView:
         self.total_de_paginas = 1
         
         #  ---- Variáveis para controle de interface ----
-        self.lista_de_pdfs = ListView(expand=True, spacing=10)
+        self.lista_de_pdfs = Row(expand=True, spacing=10, wrap=True)
         self.status_paginacao = Text("Página 1 de 1")
         self.btn_anterior = IconButton(Icons.NAVIGATE_BEFORE, on_click=self.ir_pagina_anterior)
         self.btn_proximo = IconButton(Icons.NAVIGATE_NEXT, on_click=self.ir_pagina_proxima)
@@ -77,6 +77,7 @@ class PdfListView:
                     alignment=MainAxisAlignment.CENTER
                 )
             ],
+            scroll=ScrollMode.ADAPTIVE,
             expand=True
         )
         

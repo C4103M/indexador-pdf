@@ -1,4 +1,4 @@
-from flet import *
+from flet import Page, padding, View
 from sqlalchemy.orm import Session
 
 class ConfigView:

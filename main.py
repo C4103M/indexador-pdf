@@ -7,16 +7,16 @@ from sqlalchemy.orm import sessionmaker
 from services.repository import PdfRepository
 from services.models import Base
 
-engine = create_engine("sqlite:///pdfs.db")
-Base.metadata.create_all(bind=engine) # Cria as tabelas se não existirem
-# Cria uma nova sessão para consultas
-Session = sessionmaker(bind=engine)
-session = Session()
-# Inicializar o repositório (classe) pdf, para consultas e inserções
-pdf_repo = PdfRepository(session)
 
 
 def main(page: Page):
+    engine = create_engine("sqlite:///pdfs.db", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine) # Cria as tabelas se não existirem
+    # Cria uma nova sessão para consultas
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    # Inicializar o repositório (classe) pdf, para consultas e inserções
+    pdf_repo = PdfRepository(session)
     page.theme_mode = ThemeMode.LIGHT
     # ss = Session()
     # print(PdfRepository(ss).find_all())

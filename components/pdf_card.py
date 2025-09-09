@@ -2,7 +2,7 @@ from flet import *
 from components.pdf_preview import gerar_preview
 from services.repository import PdfRepository
 from sqlalchemy.orm import Session
-from typing import Callable
+from pathlib import Path
 class PdfCard:
     def __init__(
         self,

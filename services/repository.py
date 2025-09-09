@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from services.models import Tag, Turma, Pdf
-from sqlalchemy import func
+from sqlalchemy import func, or_
 class TagRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -12,6 +12,26 @@ class TagRepository:
             tag = Tag(valor=valor_tag)
             self.session.add(tag)
         return tag
+    
+    def search_by_name(self, search_term: str) -> list[Tag]:
+        """
+        Busca por tags cujo nome contenha o termo de busca.
+        A busca ignora maiúsculas e minúsculas.
+
+        :param search_term: O texto a ser procurado (ex: "finan").
+        :return: Uma lista de objetos Tag que correspondem à busca.
+        """
+        if not search_term:
+            return [] # Retorna lista vazia se a busca for vazia
+
+        # Formata o termo de busca para encontrar qualquer tag que contenha o texto
+        search_pattern = f"%{search_term}%"
+        
+        # Executa a query usando .ilike() para uma busca case-insensitive
+        return self.session.query(Tag).filter(
+            Tag.valor.ilike(search_pattern)
+        ).order_by(Tag.valor).all()
+    
 
 class TurmaRepository:
     def __init__(self, session: Session):
@@ -76,7 +96,38 @@ class PdfRepository:
         # 2. Usa uma list comprehension para chamar .to_dict() em cada objeto
         return [pdf.to_dict() for pdf in pdfs_objetos]
 
-    def find_one(self, caminho_pdf):
-        pdf = self.session.query(Pdf).filter_by(caminho = caminho_pdf).first()
-        pdf = pdf.to_dict()
-        return pdf
+    def find_one(self, caminho_pdf) -> dict | None:
+        # print(">>> DEBUG find_one - caminho_pdf:", caminho_pdf, type(caminho_pdf))
+        query = self.session.query(Pdf).filter_by(caminho = caminho_pdf)
+        # print(">>> DEBUG SQL:", str(query))
+        pdf = query.first()
+        
+        if pdf:
+            return pdf.to_dict()
+        return None
+    
+    def search_by_term(self, search_term: str) -> list[Pdf]:
+        """
+        Busca por PDFs que estejam associados a tags que contenham o termo de busca.
+        Retorna uma lista de objetos Pdf.
+
+        :param search_term: O texto a ser procurado nas tags (ex: "certificado").
+        :return: Uma lista de objetos Pdf únicos que correspondem à busca.
+        """
+        if not search_term:
+            return []
+        
+        search_pattern = f"%{search_term}%"
+
+        # Busca os objetos Pdf completos que correspondem aos critérios
+        pdfs_encontrados = self.session.query(Pdf).filter(
+            or_(
+                Pdf.titulo.ilike(search_pattern),
+                # Usa .any() para verificar a existência de tags correspondentes.
+                # É mais limpo e muitas vezes mais eficiente que um JOIN explícito.
+                Pdf.tags.any(Tag.valor.ilike(search_pattern))
+            )
+        ).distinct().all()
+        
+        # Extrai apenas os caminhos dos objetos Pdf encontrados
+        return [pdf.caminho for pdf in pdfs_encontrados]

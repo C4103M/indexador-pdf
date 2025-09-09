@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Table
+from sqlalchemy import create_engine, Column, String, Integer, ForeignKey, Table, DateTime, func
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 
 Base = declarative_base()
@@ -36,7 +36,7 @@ class Pdf(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     caminho = Column("caminho", String)
     titulo = Column("titulo", String)
-    
+    data_inclusao = Column("data_inclusao", DateTime(timezone=True), server_default=func.now())
     # Relações N:N
     tags = relationship("Tag", secondary=pdf_tag, backref="pdfs")
     turmas = relationship("Turma", secondary=pdf_turma, backref="pdfs")
@@ -52,9 +52,10 @@ class Pdf(Base):
             "titulo": self.titulo,
             "caminho": self.caminho,
             # Converte a lista de objetos Tag em uma lista de strings (nomes das tags)
-            "tags": [tag.valor for tag in self.tags],
+            "tags": [tag.valor for tag in self.tags if tag],
             # Converte a lista de objetos Turma em uma lista de strings (nomes das turmas)
-            "turmas": [turma.nome for turma in self.turmas]
+            "turmas": [turma.nome for turma in self.turmas],
+            "data_inclusao": self.data_inclusao
         }
         # # Turmas
         # self.tags = []
