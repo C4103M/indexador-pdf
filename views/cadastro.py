@@ -4,7 +4,7 @@ from flet import *
 
 # Importe a sua nova classe Arquivo
 from services.arquivos import Arquivo
-from services.repository import TurmaRepository, PdfRepository
+from services.repository import AgrupamentoRepository, PdfRepository
 from components.buttons import btn_padrao
 from components.pdf_preview import gerar_preview
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from components.progress import LoadingOverlay
 from pathlib import Path
 import time
 import threading
+from components.back_btn import BackButton
 class CadastroView:
     def __init__(self, page: Page, session: Session):
         self.page = page
@@ -31,12 +32,12 @@ class CadastroView:
         self.page.overlay.append(self.loading_overlay.build())
         
         self.session = session
-        self.turma_repo = TurmaRepository(self.session)
+        self.agrupamento_repo = AgrupamentoRepository(self.session)
         self.pdf_repo = PdfRepository(self.session)
 
-        lista_opcoes = [dropdown.Option(t.nome) for t in self.turma_repo.find_all()]
-        self.drop_down_turmas = Dropdown(
-            label="Escolha uma turma (opcional)", options=lista_opcoes, width=300
+        lista_opcoes = [dropdown.Option(t.nome) for t in self.agrupamento_repo.find_all()]
+        self.drop_down_agrupamentos = Dropdown(
+            label="Escolha uma agrupamento (opcional)", options=lista_opcoes, width=300
         )
 
         self.pdf_preview = Container(
@@ -47,6 +48,9 @@ class CadastroView:
             width=250,
             height=250 * 1.414,
         )
+
+        self.voltar = BackButton(self.page, self.session)
+        self.voltar = self.voltar.build()
 
     # --- Métodos de Construção da UI ---
 
@@ -82,10 +86,10 @@ class CadastroView:
                             self.tf_titulo,
                             Text("Tags:", weight="bold", size=20),
                             self.tf_tags,
-                            Text("Turma:", weight="bold", size=20),
+                            Text("Agrupamento:", weight="bold", size=20),
                             Row(
                                 controls=[
-                                    self.drop_down_turmas,
+                                    self.drop_down_agrupamentos,
                                     btn_cancelar,
                                     btn_salvar,
                                 ],
@@ -128,7 +132,7 @@ class CadastroView:
                 self.arquivo_atual.tags = [
                     tag.strip() for tag in self.tf_tags.value.split(",")
                 ]
-                self.arquivo_atual.turma = self.drop_down_turmas.value
+                self.arquivo_atual.agrupamento = self.drop_down_agrupamentos.value
 
                 # Salva o arquivo e atualiza o caminho
                 self.arquivo_atual.salvar_definitivo()
@@ -138,7 +142,7 @@ class CadastroView:
                 # print(f"  > Título: {self.arquivo_atual.titulo}")
                 # print(f"  > Caminho: {self.arquivo_atual.path}")
                 # print(f"  > Tags: {self.arquivo_atual.tags}")
-                # print(f"  > Turma: {self.arquivo_atual.turma}")
+                # print(f"  > agrupamento: {self.arquivo_atual.agrupamento}")
                 # print("-" * 30)
                 # # --- FIM DO BLOCO ---
                 # TODO: Aqui você adicionaria a lógica para salvar no banco de dados
@@ -146,10 +150,10 @@ class CadastroView:
                     titulo=self.arquivo_atual.titulo,
                     caminho=self.arquivo_atual.path,
                     tags_valores=self.arquivo_atual.tags,
-                    turma_nome=self.arquivo_atual.turma,
+                    agrupamento_nome=self.arquivo_atual.agrupamento,
                 )
 
-                # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_turmas.value)
+                # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_agrupamentos.value)
 
                 snack_bar = SnackBar(
                     Text(f"Arquivo '{self.arquivo_atual.titulo}' salvo com sucesso!"),
@@ -261,7 +265,7 @@ class CadastroView:
         self.arquivo_atual = None
         self.tf_titulo.value = ""
         self.tf_tags.value = ""
-        self.drop_down_turmas.value = None
+        self.drop_down_agrupamentos.value = None
         self.pdf_preview.content = Text("Selecione um PDF para visualizar", size=16)
         self.page.update()
 
@@ -269,6 +273,11 @@ class CadastroView:
         """Constrói e retorna o objeto View final para o Flet."""
         return View(
             route="/cadastro",
+            appbar=AppBar(
+                leading=self.voltar,
+                title=Text("Cadastrar Pdf"),
+                # bgcolor=Colors.ON_SURFACE_VARIANT
+            ),
             controls=[
                 Row(
                     controls=[

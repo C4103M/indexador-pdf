@@ -2,6 +2,7 @@ from flet import *
 from views.home import home_view
 from views.cadastro import cadastro_view
 from views.lista_pdfs import list_view
+from views.config import config_view
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from services.repository import PdfRepository
@@ -27,7 +28,7 @@ def main(page: Page):
         elif page.route == "/cadastro":
             page.views.append(cadastro_view(page, session))
         elif page.route == "/config":
-            page.views.append(cadastro_view(page, session))
+            page.views.append(config_view(page, session))
         elif page.route == "/listar":
             page.views.append(list_view(page, session))
         page.update()

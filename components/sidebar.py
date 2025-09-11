@@ -8,6 +8,8 @@ from flet import (
     padding,
     Page,
     GestureDetector,
+    Icons,
+    IconButton
 )
 
 
@@ -18,14 +20,13 @@ class SideBar:
             content=Container(
                 content=Row(
                     controls=[
-                        Image("./elements/home.png", width=20, height=20),
+                        IconButton(icon = Icons.HOME,),
                         Text("Home", weight="bold"),
                     ],
-                    alignment=MainAxisAlignment.START,
+                    
                 ),
                 width=250,
-                height=30,
-                padding=padding.only(left=5),
+                # padding=padding.only(left=5),
             ),
             on_tap=self.ir_para_home,
         )
@@ -33,14 +34,15 @@ class SideBar:
             content=Container(
                 content=Row(
                     controls=[
-                        Image("./elements/pasta.png", width=20, height=20),
+                        # Image("./elements/pasta.png", width=20, height=20),
+                        IconButton(icon = Icons.FOLDER_OPEN_ROUNDED),
                         Text("Arquivos", weight="bold"),
                     ],
-                    alignment=MainAxisAlignment.START,
+                    
                 ),
                 width=250,
-                height=40,
-                padding=padding.only(left=5),
+                # height=40,
+                # padding=padding.only(left=5),
             ),
             on_tap=self.ir_para_cadastro,
         )
@@ -48,21 +50,22 @@ class SideBar:
             content=Container(
                 content=Row(
                     controls=[
-                        Image("./elements/config.png", width=20, height=20),
+                        # Image("./elements/config.png", width=20, height=20),
+                        IconButton(icon = Icons.SETTINGS),
                         Text("Configurações", weight="bold"),
                     ],
-                    alignment=MainAxisAlignment.START,
+                    
                 ),
                 width=250,
-                height=40,
-                padding=padding.only(left=5),
+                # height=40,
+                # padding=padding.only(left=5),
             ),
             on_tap=self.ir_para_config,
         )
 
     def build(self) -> Column:
         return Column(
-            controls=[self.home, self.arquivos, self.configuracoes], width=250
+            controls=[self.home, self.arquivos, self.configuracoes],
         )
 
     # Funções de redirecionamento

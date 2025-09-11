@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from services.models import Tag, Turma, Pdf
+from services.models import Tag, Agrupamento, Pdf
 from sqlalchemy import func, or_
 class TagRepository:
     def __init__(self, session: Session):
@@ -33,26 +33,28 @@ class TagRepository:
         ).order_by(Tag.valor).all()
     
 
-class TurmaRepository:
+class AgrupamentoRepository:
     def __init__(self, session: Session):
         self.session = session
     
-    def find_by_name(self, nome_turma: str) -> Turma | None:
-        """Busca uma turma pelo nome"""
-        return self.session.query(Turma).filter_by(nome=nome_turma).first()
+    def find_by_name(self, nome_agrupamento: str) -> Agrupamento | None:
+        """Busca um agrupamento pelo nome"""
+        # CORRIGIDO: Query no modelo Agrupamento
+        return self.session.query(Agrupamento).filter_by(nome=nome_agrupamento).first()
 
-    def find_all(self) -> list:
-        """Pega todas as turmas"""
-        return self.session.query(Turma).order_by(Turma.nome).all()
+    def find_all(self) -> list[Agrupamento]:
+        """Pega todos os agrupamentos"""
+        # CORRIGIDO: Query no modelo Agrupamento
+        return self.session.query(Agrupamento).order_by(Agrupamento.nome).all()
     
 class PdfRepository:
     def __init__(self, session: Session):
         self.session = session
         
         self.tag_repo = TagRepository(session)
-        self.turma_repo = TurmaRepository(session)
+        self.turma_repo = AgrupamentoRepository(session)
 
-    def create(self, titulo: str, caminho: str, tags_valores: list[str], turma_nome: str = None) -> Pdf:
+    def create(self, titulo: str, caminho: str, tags_valores: list[str], agrupamento_nome: str = None) -> Pdf:
         """Cria um novo registro de PDF com suas tags e turma associadas."""
         
         # Cria a instância principal do PDF
@@ -65,10 +67,10 @@ class PdfRepository:
         print("foi chamada")
             
         # Processa a turma, se fornecida
-        if turma_nome:
-            turma_obj = self.turma_repo.find_by_name(turma_nome)
-            if turma_obj:
-                novo_pdf.turmas.append(turma_obj)
+        if agrupamento_nome:
+            agrupamento_obj = self.agrupamento_repo.find_by_name(agrupamento_nome)
+            if agrupamento_obj:
+                novo_pdf.agrupamentos.append(agrupamento_obj)
                 
         #Adiciona o objeto completo à sessão e commita
         self.session.add(novo_pdf)
@@ -83,17 +85,12 @@ class PdfRepository:
     def find_all(self, page: int = 1, per_page: int = 20) -> list[dict]:
         """
         Busca todos os PDFs de forma paginada.
-        :param page: O número da página a ser buscada (começando em 1).
-        :param per_page: A quantidade de itens por página.
         """
-        # Calcula o 'offset' (quantos itens pular)
-        # Para a página 1, o offset é 0. Para a página 2, é 'per_page', e assim por diante.
         offset = (page - 1) * per_page
-        pdfs_objetos = self.session.query(Pdf).all()
         
+        # CORRIGIDO: Removida a linha duplicada e desnecessária
         pdfs_objetos = self.session.query(Pdf).order_by(Pdf.titulo).offset(offset).limit(per_page).all()
         
-        # 2. Usa uma list comprehension para chamar .to_dict() em cada objeto
         return [pdf.to_dict() for pdf in pdfs_objetos]
 
     def find_one(self, caminho_pdf) -> dict | None:
