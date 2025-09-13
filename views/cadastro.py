@@ -136,24 +136,13 @@ class CadastroView:
 
                 # Salva o arquivo e atualiza o caminho
                 self.arquivo_atual.salvar_definitivo()
-                # # --- BLOCO DE VERIFICAÇÃO ---
-                # print("-" * 30)
-                # print("[VIEW] Preparando para criar no banco:")
-                # print(f"  > Título: {self.arquivo_atual.titulo}")
-                # print(f"  > Caminho: {self.arquivo_atual.path}")
-                # print(f"  > Tags: {self.arquivo_atual.tags}")
-                # print(f"  > agrupamento: {self.arquivo_atual.agrupamento}")
-                # print("-" * 30)
-                # # --- FIM DO BLOCO ---
-                # TODO: Aqui você adicionaria a lógica para salvar no banco de dados
+                # Salvar em banco de dados
                 self.pdf_repo.create(
                     titulo=self.arquivo_atual.titulo,
                     caminho=self.arquivo_atual.path,
                     tags_valores=self.arquivo_atual.tags,
                     agrupamento_nome=self.arquivo_atual.agrupamento,
                 )
-
-                # ex: database.salvar_arquivo(self.arquivo_atual, self.drop_down_agrupamentos.value)
 
                 snack_bar = SnackBar(
                     Text(f"Arquivo '{self.arquivo_atual.titulo}' salvo com sucesso!"),

@@ -77,6 +77,39 @@ class PdfRepository:
         self.session.commit()
         return novo_pdf
     
+    def update(self, pdf_id, novo_titulo: str, novas_tags: list[str], novo_agrupamento):
+        pdf = self.session.get(Pdf, pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF com id {pdf_id} não encontrado.")
+        if novo_titulo:
+            pdf.titulo = novo_titulo
+
+        if novas_tags is not None:
+            # Limpa as tags atuais
+            pdf.tags.clear()
+            # Adiciona as novas tags
+            for valor in novas_tags:
+                tag_obj = self.tag_repo.find_or_create(valor)
+                pdf.tags.append(tag_obj)
+                
+        if novo_agrupamento is not None:
+            pdf.agrupamentos.clear()  # limpa agrupamentos antigos
+            agrupamento_obj = self.agrupamento_repo.find_by_name(novo_agrupamento)
+            if agrupamento_obj:
+                pdf.agrupamentos.append(agrupamento_obj)
+        # 5️⃣ Commit das alterações
+        self.session.commit()
+    
+    def delete(self, pdf_id):
+        pdf = self.session.get(Pdf, pdf_id)
+        if pdf:
+            self.session.delete(pdf)
+            self.session.commit()
+
+            # Apaga tags sem PDFs
+            self.session.query(Tag).filter(~Tag.pdfs.any()).delete(synchronize_session=False)
+            self.session.commit()
+    
     def get_total_count(self) -> int:
         """Retorna a contagem total de PDFs no banco."""
         # usa a função COUNT do SQL para ser eficiente
@@ -96,6 +129,16 @@ class PdfRepository:
     def find_one(self, caminho_pdf) -> dict | None:
         # print(">>> DEBUG find_one - caminho_pdf:", caminho_pdf, type(caminho_pdf))
         query = self.session.query(Pdf).filter_by(caminho = caminho_pdf)
+        # print(">>> DEBUG SQL:", str(query))
+        pdf = query.first()
+        
+        if pdf:
+            return pdf.to_dict()
+        return None
+    
+    def find_by_id(self, pdf_id) -> dict | None:
+        # print(">>> DEBUG find_one - caminho_pdf:", caminho_pdf, type(caminho_pdf))
+        query = self.session.query(Pdf).filter_by(id = pdf_id)
         # print(">>> DEBUG SQL:", str(query))
         pdf = query.first()
         

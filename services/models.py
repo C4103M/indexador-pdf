@@ -6,15 +6,15 @@ Base = declarative_base()
 # Tabela de associação para a relação N:N entre Pdf e Tag
 pdf_tag = Table(
     "pdf_tag", Base.metadata,
-    Column("pdf_id", Integer, ForeignKey("pdfs.id"), primary_key=True),
-    Column("tag_id", Integer, ForeignKey("tags.id"), primary_key=True, nullable=False)
+    Column("pdf_id", Integer, ForeignKey("pdfs.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, nullable=False)
 )
 
 # Tabela de associação para a relação N:N entre Pdf e Agrupamento
 # CORRIGIDO: Nomes em minúsculas e ForeignKey apontando para "agrupamentos.id"
 pdf_agrupamento = Table(
     "pdf_agrupamento", Base.metadata,
-    Column("pdf_id", Integer, ForeignKey("pdfs.id"), primary_key=True),
+    Column("pdf_id", Integer, ForeignKey("pdfs.id", ondelete="CASCADE"), primary_key=True),
     Column("agrupamento_id", Integer, ForeignKey("agrupamentos.id"), primary_key=True, nullable=False)
 )
 
@@ -44,7 +44,12 @@ class Pdf(Base):
     # Relações N:N
     tags = relationship("Tag", secondary=pdf_tag, backref="pdfs")
     # CORRIGIDO: Relação atualizada para usar os nomes corretos
-    agrupamentos = relationship("Agrupamento", secondary=pdf_agrupamento, backref="pdfs")
+    agrupamentos = relationship(
+        "Agrupamento",
+        secondary=pdf_agrupamento,
+        backref="pdfs",
+        cascade="all, delete"
+    )
     
     def __init__(self, caminho, titulo):
         self.caminho = caminho

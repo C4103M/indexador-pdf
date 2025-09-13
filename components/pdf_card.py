@@ -15,7 +15,6 @@ class PdfCard:
         self.caminho_pdf = caminho_pdf
 
         # 1. Busca os dados do PDF no banco de dados
-        # No seu código, você pode remover a simulação
         pdf_repo = PdfRepository(self.session) 
         self.data = pdf_repo.find_one(caminho_pdf)
         if not self.data:
@@ -38,7 +37,7 @@ class PdfCard:
                     border_radius=border_radius.all(12)
                 )
             )
-
+        
         # 4. Constrói o conteúdo do card
         self.card_content = Container(
             content=Column(
@@ -82,17 +81,15 @@ class PdfCard:
         # 5. Torna o card clicável e adiciona efeito de hover
         self.clickable_area = GestureDetector(
             content=self.card_content,
-            on_tap=self._handle_click,
+            on_tap=self.ir_pdf_view,
+            # on_click=self.ir_pdf_view,
             on_hover=self._handle_hover,
             mouse_cursor=MouseCursor.CLICK,
         )
 
-    def _handle_click(self, e: TapEvent):
-        """Chama a função de callback passada no construtor."""
-        if self.on_click_callback:
-            # Passa os dados do card clicado para a função de callback
-            self.on_click_callback(self.data)
-
+    def ir_pdf_view(self, e):
+        pdf_id = self.data["id"]
+        self.page.go(f"/pdf/{pdf_id}")
     def _handle_hover(self, e: HoverEvent):
         """Aplica um efeito visual ao passar o mouse."""
         self.card_content.shadow.blur_radius = 15 if e.data == "true" else 5
