@@ -47,6 +47,20 @@ class AgrupamentoRepository:
         # CORRIGIDO: Query no modelo Agrupamento
         return self.session.query(Agrupamento).order_by(Agrupamento.nome).all()
     
+    def create(self, nome):
+        novo_agrupamento = Agrupamento(nome)
+        self.session.add(novo_agrupamento)
+        self.session.commit()
+    
+    def delete(self, nome):
+        agp = self.find_by_name(nome)
+        if agp:
+            for pdf in agp.pdfs[:]:  # [:] para copiar a lista e evitar problema durante iteração
+                agp.pdfs.remove(pdf)
+            self.session.delete(agp)
+            self.session.commit()
+        
+        
 class PdfRepository:
     def __init__(self, session: Session):
         self.session = session

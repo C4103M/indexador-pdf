@@ -65,24 +65,19 @@ class ConfigView:
         """Adiciona um novo agrupamento ao banco de dados."""
         nome_novo_agrupamento = self.txt_novo_agrupamento.value.strip()
         if not nome_novo_agrupamento:
-            self.page.open(SnackBar(Text("O nome do agrupamento não pode estar vazio."), open=True))
+            self.page.open(SnackBar(Text("O nome do agrupamento não pode estar vazio.")))
             return
-            
         try:
-            # Lógica para adicionar ao banco (simulada, pois não temos a classe Agrupamento aqui)
-            from services.models import Agrupamento
             # Verifica se já existe
             if self.repo.find_by_name(nome_novo_agrupamento):
                  self.page.open(SnackBar(Text(f"O agrupamento '{nome_novo_agrupamento}' já existe."), open=True))
                  return
-
-            novo_grupo = Agrupamento(nome=nome_novo_agrupamento)
-            self.session.add(novo_grupo)
+            self.repo.create(nome_novo_agrupamento)
             self.session.commit()
             
             self.txt_novo_agrupamento.value = ""
             self._carregar_agrupamentos() # Atualiza a lista
-            self.page.open(SnackBar(Text(f"Agrupamento '{nome_novo_agrupamento}' adicionado com sucesso!"), open=True))
+            self.page.open(SnackBar(Text(f"Agrupamento '{nome_novo_agrupamento}' adicionado com sucesso!")))
         except Exception as ex:
             self.page.open(SnackBar(Text(f"Erro ao adicionar agrupamento: {ex}"), open=True))
             self.session.rollback()
@@ -96,8 +91,7 @@ class ConfigView:
         try:
             agrupamento_para_remover = self.repo.find_by_name(nome_selecionado)
             if agrupamento_para_remover:
-                self.session.delete(agrupamento_para_remover)
-                self.session.commit()
+                self.repo.delete(nome_selecionado)
                 self._carregar_agrupamentos() # Atualiza a lista
                 self.page.open(SnackBar(Text(f"Agrupamento '{nome_selecionado}' removido com sucesso!"), open=True))
         except Exception as ex:
