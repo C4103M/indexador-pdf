@@ -20,7 +20,7 @@ def main(page: Page):
     session = Session()
     # Inicializar o repositório (classe) pdf, para consultas e inserções
     pdf_repo = PdfRepository(session)
-    # page.theme_mode = ThemeMode.LIGHT
+    page.theme_mode = ThemeMode.LIGHT
     # ss = Session()
     # print(PdfRepository(ss).find_all())
     def route_change(e):

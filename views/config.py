@@ -2,6 +2,8 @@ from flet import *
 from sqlalchemy.orm import Session
 from services.repository import AgrupamentoRepository
 from components.back_btn import BackButton
+import os
+import json
 
 class ConfigView:
     def __init__(self, page: Page, session: Session):
@@ -10,10 +12,6 @@ class ConfigView:
         self.repo = AgrupamentoRepository(self.session)
         
         # --- Controles da UI ---
-        
-        # Seletor de pasta
-        self.file_picker = FilePicker(on_result=self._on_directory_selected)
-        self.page.overlay.append(self.file_picker)
 
         # Seção de Adicionar Agrupamento
         self.txt_novo_agrupamento = TextField(
@@ -34,14 +32,6 @@ class ConfigView:
             tooltip="Remover agrupamento selecionado",
             on_click=self._remover_agrupamento,
             disabled=True # Começa desabilitado
-        )
-        
-        # Seção de Local de Salvamento
-        self.txt_caminho_salvar = Text("Nenhum local selecionado.", italic=True)
-        self.btn_selecionar_pasta = ElevatedButton(
-            "Selecionar Pasta",
-            icon=Icons.FOLDER_OPEN,
-            on_click=lambda _: self.file_picker.get_directory_path(dialog_title="Selecione a pasta para salvar os PDFs")
         )
         
         # Carrega os dados iniciais
@@ -104,14 +94,22 @@ class ConfigView:
         self.page.update()
         
     def _on_directory_selected(self, e: FilePickerResultEvent):
-        """Atualiza o texto com o caminho da pasta selecionada."""
+        """Atualiza o texto com o caminho da pasta selecionada e salva em settings.json."""
         if e.path:
             self.txt_caminho_salvar.value = e.path
             self.txt_caminho_salvar.italic = False
-            
+
+            # Caminho do settings.json (mesma pasta onde está o script principal)
+            settings_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "settings.json")
+
+            # Salva o caminho no JSON
+            with open(settings_path, "w", encoding="utf-8") as f:
+                json.dump({"path_default": e.path}, f, indent=4, ensure_ascii=False)
+
         else:
             self.txt_caminho_salvar.value = "Nenhum local selecionado."
             self.txt_caminho_salvar.italic = True
+
         self.page.update()
 
     def build(self) -> View:
@@ -136,18 +134,6 @@ class ConfigView:
                                 padding=20
                             )
                         ),
-                        Divider(height=30),
-                        Text("Preferências de Salvamento", size=20, weight=FontWeight.BOLD),
-                        Card(
-                            content=Container(
-                                Column([
-                                    Text("Local Padrão para Salvar PDFs", weight=FontWeight.BOLD),
-                                    self.txt_caminho_salvar,
-                                    self.btn_selecionar_pasta
-                                ]),
-                                padding=20
-                            )
-                        )
                     ],
                     spacing=20
                 )
