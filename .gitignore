@@ -6,3 +6,5 @@ __pycache__
 teste.py
 pdfs
 dist
+indexador-pdf.spec
+build
