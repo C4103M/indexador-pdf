@@ -1,13 +1,11 @@
-import fitz  # PyMuPDF
-import io
-import base64
 from flet import Image, Column
-
+from services.config import dir_pdfs
+from pathlib import Path
 def gerar_preview(caminho_pdf: str, width=250) -> Image:
     import fitz, base64
-
+    caminho_completo = Path(dir_pdfs) / caminho_pdf
     try:
-        pdf = fitz.open(caminho_pdf)
+        pdf = fitz.open(caminho_completo)
         pagina = pdf[0]
 
         # escalonamento proporcional

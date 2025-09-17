@@ -10,7 +10,6 @@ from components.pdf_preview import gerar_preview
 from sqlalchemy.orm import Session
 from components.progress import LoadingOverlay
 from pathlib import Path
-import time
 import threading
 from components.back_btn import BackButton
 class CadastroView:
@@ -112,6 +111,8 @@ class CadastroView:
         """Chamado quando um arquivo é selecionado no FilePicker.""" 
         caminho_temp = Arquivo.copiar_para_temp(e, self.page)
         if not caminho_temp:
+            # snack_bar = SnackBar(Text(f"Falha ao abrir o arquivo"), open=True)
+            # self.page.open(snack_bar)
             return  # Usuário cancelou a seleção
         
         # Usa a classe Arquivo para criar o objeto e extrair os dados

@@ -98,10 +98,16 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### Execute a aplicação 
+#### Execute a aplicação ou gere o executável
+* Executando a aplicação em desenvolvimento
 ```cmd
 python main.py
 ```
+* Executando a aplicação pelo executável
+```cmd
+pyinstaller --name idexador-pdf --icon icon.ico --console --onefile --collect-data yake  main.py
+```
+
 ### Em modo usuário
 * Baixe e execute o arquivo ```indexador-pdf.exe```
 

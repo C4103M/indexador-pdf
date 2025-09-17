@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from services.models import Tag, Agrupamento, Pdf
 from sqlalchemy import func, or_
+from pathlib import Path
+from services.config import standard_dir, dir_pdfs
 class TagRepository:
     def __init__(self, session: Session):
         self.session = session
-        
     def find_or_create(self, valor_tag: str) -> Tag:
         """Busca uma tag pelo valor, se não existir, cria uma"""
         tag = self.session.query(Tag).filter_by(valor=valor_tag).first()
@@ -67,18 +68,22 @@ class PdfRepository:
         
         self.tag_repo = TagRepository(session)
         self.turma_repo = AgrupamentoRepository(session)
-
+        
+    def get_pdf_path(self, filename: str) -> str:
+        return str(Path(dir_pdfs) / filename)
+    
     def create(self, titulo: str, caminho: str, tags_valores: list[str], agrupamento_nome: str = None) -> Pdf:
         """Cria um novo registro de PDF com suas tags e turma associadas."""
         
         # Cria a instância principal do PDF
-        novo_pdf = Pdf(caminho=caminho, titulo=titulo)
+        nome_arquivo = Path(caminho).name
+        novo_pdf = Pdf(caminho=nome_arquivo, titulo=titulo)
         self.session.add(novo_pdf)
         # Processa as tags
         for valor in tags_valores:
             tag_obj = self.tag_repo.find_or_create(valor)
             novo_pdf.tags.append(tag_obj)
-        print("foi chamada")
+        # print("foi chamada")
             
         # Processa a turma, se fornecida
         if agrupamento_nome:
@@ -147,7 +152,9 @@ class PdfRepository:
         pdf = query.first()
         
         if pdf:
-            return pdf.to_dict()
+            d = pdf.to_dict()
+            d["caminho"] = self.get_pdf_path(d["caminho"])
+            return d
         return None
     
     def find_by_id(self, pdf_id) -> dict | None:
@@ -157,7 +164,9 @@ class PdfRepository:
         pdf = query.first()
         
         if pdf:
-            return pdf.to_dict()
+            d = pdf.to_dict()
+            d["caminho"] = self.get_pdf_path(d["caminho"])
+            return d
         return None
     
     def search_by_term(self, search_term: str) -> list[Pdf]:

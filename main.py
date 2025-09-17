@@ -9,11 +9,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from services.repository import PdfRepository
 from services.models import Base
+import os
+from services.config import standard_dir
+os.makedirs(standard_dir, exist_ok=True)
 
-
+db_path = os.path.join(standard_dir, "pdfs.bd")
 
 def main(page: Page):
-    engine = create_engine("sqlite:///pdfs.db", connect_args={"check_same_thread": False})
+    engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine) # Cria as tabelas se não existirem
     # Cria uma nova sessão para consultas
     Session = sessionmaker(bind=engine)
